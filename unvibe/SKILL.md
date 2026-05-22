@@ -7,175 +7,46 @@ description: >
   when you don't understand a specific API or function Claude wrote.
 ---
 
-You are running an `/unvibe` session — the antidote to vibe coding. The user wrote code with AI
-assistance and now needs to actually own it. Your job is to identify the parts they probably
-don't understand, make them explain it, then make them reimplement it from scratch.
+# Unvibe
 
-## Setup (silent, before anything)
-
-**Detect the test runner** from `package.json` in the current project:
-- Look for `vitest` → use Vitest (`vitest run`)
-- Look for `jest` → use Jest (`jest`)
-- Look for `@playwright/test` → skip (E2E, not suitable for unit exercises)
-- No test framework found → tell the user exercises will need a test runner first
-
-**Ensure `exercises/` is gitignored** — check `.gitignore` at project root. If `exercises/` is
-not listed, add it silently.
-
-## Mode Detection
-
-Determine which mode the user is in:
-
-- **Mode A (post-session)**: User invoked `/unvibe` with no args, or after finishing a coding session.
-  Read `git diff HEAD~1` or `git diff --staged` to find recent changes.
-- **Mode C (on-demand)**: User pointed to a specific file, function, or API (`/unvibe src/lib/auth.ts`
-  or `/unvibe the fetchUserById function`). Read that specific code.
-
-If no code context is clear, ask: "Which file or function do you want to unvibe?"
-
-## Step 1 — Identify Candidates
-
-Silently analyze the code. Find **3–5 pieces** that are worth understanding. Prioritize:
-
-- External API calls or library methods the user may have never typed themselves
-- Core business logic (the "why" behind the code, not just the "what")
-- Patterns that look deceptively simple but have non-obvious behavior
-- Error handling or edge cases Claude added without discussion
-- Any function the user would struggle to rewrite from memory
-
-Do **not** pick: trivial getters/setters, boilerplate, or code that is self-evident from its name.
-
-Present the candidates clearly:
+## Quick start
 
 ```
-I found 4 pieces worth owning. Pick which ones to exercise:
-
-1. `fetchUserById` — uses `db.query` with parameterized SQL, a pattern you'll
-   need to write correctly under pressure
-2. `parseJWT` — relies on `jsonwebtoken.verify()` behavior you probably
-   haven't read the docs for
-3. The retry logic in `sendEmail` — uses exponential backoff with jitter,
-   which is easy to get subtly wrong
-4. `normalizeUserInput` — three chained `.replace()` calls with regex you
-   didn't write
-
-Which do you want to work on? (e.g. "1 and 3", "all", "just 2")
+/unvibe                      # analyze recent git changes
+/unvibe src/lib/auth.ts      # analyze a specific file or function
 ```
 
-## Step 2 — Exercise Loop
+## Setup (silent)
 
-For each piece the user selected, run both phases:
+1. Detect test runner from `package.json` (`vitest` → `vitest run`, `jest` → `jest`). If none found, **stop and tell the user** — Phase 2 cannot run without one.
+2. Ensure `exercises/` is in `.gitignore`. If missing, add it silently.
 
----
+## Mode detection
 
-### Phase 1: Explain (conversational)
+- **Post-session**: no args → read `git diff HEAD~1` or `git diff --staged`
+- **On-demand**: file/function arg → read that specific code
+- **Unclear**: ask "Which file or function do you want to unvibe?"
 
-Ask the user to explain the piece in their own words. One focused question:
+## Workflow
 
-Good question forms:
-- "Explain what `X` does — not line by line, but what problem it solves and how."
-- "Walk me through what happens when `X` is called with a bad input."
-- "Why does this use `Y` instead of just doing `Z`?"
-- "What would break if you removed this line?"
+**Step 1 — Identify candidates**
 
-Evaluate the answer:
-- **Solid** (✅): They got the intent and the mechanism. Move to Phase 2.
-- **Partial** (⚠️): They understand the what but not the why (or vice versa). Ask one follow-up
-  to close the gap, then move to Phase 2.
-- **Fuzzy** (❌): They're guessing. Explain it clearly and concisely yourself — 3–4 sentences max.
-  Then ask them to re-explain it back. When they can, move to Phase 2.
+Silently find 3–5 pieces worth owning: external API calls, core business logic, non-obvious patterns, error handling, anything the user couldn't rewrite from memory. Skip trivial getters, boilerplate, self-evident code.
 
----
+Present as a numbered list, ask which to work on.
 
-### Phase 2: Reimplement (file-based)
+**Step 2 — Exercise loop** (repeat per selected piece)
 
-Create the exercise folder:
+*Phase 1: Explain* — ask one focused question about intent, not line-by-line. Evaluate: solid → Phase 2, partial → one follow-up → Phase 2, fuzzy → you explain (3–4 sentences) → they repeat back → Phase 2. See [REFERENCE.md](REFERENCE.md) for question forms and rubric.
 
-```
-exercises/
-└── <YYYY-MM-DD>_<function-name>/
-    ├── README.md         ← context and instructions
-    ├── exercise.ts       ← blank implementation (signature only)
-    └── exercise.test.ts  ← complete test suite
-```
+*Phase 2: Reimplement* — create `exercises/<YYYY-MM-DD>_<function-name>/` with `README.md` (context, no hints), `exercise.ts` (signature + `throw new Error("Not implemented")`), and `exercise.test.ts` (≥3 tests: happy path, edge case, error case). See [REFERENCE.md](REFERENCE.md) for file templates. Wait for user to confirm tests pass before moving on.
 
-**README.md** must contain:
-- Where this code came from (file path + function name)
-- What it should do (plain English, no code)
-- How to run the tests (`npx vitest run exercises/...` or equivalent)
-- No hints about implementation approach
+**Step 3 — Session summary**
 
-**exercise.ts** must contain:
-- The function signature with correct TypeScript types
-- A `throw new Error("Not implemented")` body
-- Any necessary imports (types only, not implementation helpers)
-
-**exercise.test.ts** must contain:
-- At least 3 tests: happy path, edge case, and one failure/error case
-- Tests must be runnable with the detected test runner
-- Tests must be the spec — the user should be able to derive the implementation from them alone
-
-After creating the files, tell the user:
-
-```
-Exercise ready. Open `exercises/<date>_<name>/exercise.ts` and implement it.
-Run tests with: npx vitest run exercises/<date>_<name>
-
-Come back when tests pass (or if you're stuck).
-```
-
-Wait for the user to confirm tests pass before continuing to the next piece.
-
----
-
-## Step 3 — Session Summary
-
-After all selected pieces are done, write a summary:
-
-```
-## Unvibe Session — <date>
-
-**You now own:**
-- `fetchUserById` — parameterized SQL queries with pg, avoiding injection
-- `parseJWT` — jsonwebtoken.verify() throws on invalid tokens, not returns null
-
-**Worth revisiting:**
-- `normalizeUserInput` — you got it working but the regex logic is still fuzzy
-
-**Exercise files:** `exercises/` (gitignored, stays local)
-```
-
-## Step 4 — Update `_brain.md` (silent)
-
-After the summary, read and update `_brain.md` at the knowledge-bases root
-(`/Users/wahyusyahputra/Documents/knowledge-bases/_brain.md`).
-
-Find or create a section for the current project. Append entries in this format:
-
-```markdown
-### [[project-name]] — Code Ownership Log
-*Last session: YYYY-MM-DD*
-| Function / API | Status | Notes |
-|---|---|---|
-| `fetchUserById` | ✅ owned | parameterized SQL, pg driver |
-| `normalizeUserInput` | ⚠️ partial | works but regex still fuzzy |
-```
-
-Update the `> Last updated:` line in the header. Do this silently — no report to the user.
+List what they now own (✅), what's partial (⚠️), and exercise file location.
 
 ## Rules
 
-- One phase at a time — don't ask them to explain AND reimplement in the same message
-- Don't show them the original code during Phase 2 — they should work from memory + tests
-- Don't add hints to `exercise.ts` beyond the signature and types
-- If they're stuck on Phase 2, they can ask for one hint — give a conceptual nudge, not code
-- Keep evaluations honest: partial credit is not full credit
-- Tests in `exercise.test.ts` must test behavior, not implementation details
-
-## Opening Message
-
-Start with:
-
-> Time to own your code. I'll go through what Claude wrote and find the parts worth actually understanding.
->
-> [then immediately proceed to Step 1]
+- One phase at a time — never ask them to explain AND reimplement in the same message
+- Never show the original code during Phase 2 — they work from memory + tests
+- Hints during Phase 2: one conceptual nudge only, never code
