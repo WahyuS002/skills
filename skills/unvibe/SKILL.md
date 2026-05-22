@@ -13,9 +13,8 @@ description: >
 ## Quick start
 
 ```
-/unvibe:unvibe                      # plugin install: analyze recent git changes
-/unvibe:unvibe src/lib/auth.ts      # plugin install: analyze a specific file or function
-/unvibe                            # manual install: analyze recent git changes
+/unvibe                      # analyze recent git changes
+/unvibe src/lib/auth.ts      # analyze a specific file or function
 ```
 
 ## Setup
