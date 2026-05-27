@@ -13,85 +13,132 @@
 - **Partial** (⚠️): Understands what but not why (or vice versa) → one follow-up → Phase 2
 - **Fuzzy** (❌): Guessing → explain yourself in 3–4 sentences → ask them to repeat back → Phase 2
 
-## Phase 2: Exercise Templates
+## Phase 2: Exercise Layout
 
-Create exercises under `.unvibe/exercises/<YYYY-MM-DD>_<slug>/` only after the user approves file writes.
+Create exercises under `.unvibe/exercises/<YYYY-MM-DD_HH-MM-SS>_<slug>/` only after the user approves file writes. The timestamp uses dashes and underscores only (no colon) so the path is safe on every OS and shell.
 
-### README.md
 ```
-# Exercise: <behavior-or-function-name>
+.unvibe/exercises/2026-05-27_14-30-05_choose-strategy/
+  README.md          # LeetCode-style problem statement
+  exercise.<ext>     # signature + failing stub, no hints
+  test_exercise.<ext># behavioral tests = the hidden judge
+  run.sh             # language-aware runner (chmod +x)
+```
+
+### README.md — LeetCode-style problem
+
+```
+# [MEDIUM] <behavior-or-function-name>
 
 **Source:** `<file-path>` -> `<symbol-or-behavior>`
 
-**Goal:** [plain English behavior, no implementation hints]
+## Problem
+[plain-English description of what to build]
 
-**Your task:** Recreate the behavior from memory using the exercise file and tests/spec.
+## Examples
+[2–3 concrete happy-path Input→Output pairs only]
+Input:  <args>
+Output: <result>
 
-**Verify:** [native test command, or "Share your result/output here"]
+## Constraints
+- [input domain, invariants, required fallbacks]
+
+## Signature
+<exact public signature in the detected language>
 ```
 
-### Runnable Native Exercise
+- **Difficulty** (`EASY`/`MEDIUM`/`HARD`) is assigned from branch count, number of edge cases, and external dependencies.
+- Show only happy-path examples. Keep edge cases and failure cases OUT of the README — they live in the tests and surface only when a test goes red.
 
-Use this when the language and test runner are confidently detected. Match the repo's conventions for filenames, imports, package/module layout, and test command.
+### Test file — the hidden judge
 
-Exercise file:
-```
-[same public signature or smallest useful interface]
+Tests are the spec: enough to derive correct behavior, not so detailed they reveal the original implementation. Test observable behavior, not private structure. Every assertion carries a descriptive message (case label + expected vs actual) so a failure explains itself without `-s`/print. Do NOT print expected values on success — that leaks hidden cases.
 
-[minimal stub that fails clearly, without hints]
-```
+```python
+# test_exercise.py (pytest)
+from exercise import choose_strategy
 
-Test file:
-```
-[native test framework setup]
+def test_indonesian_with_caption_uses_asr_primary():
+    got = choose_strategy("id", True)
+    assert got == "asr_primary", f"id+caption harus 'asr_primary', dapat '{got}'"
 
-[happy path behavior]
-[edge case behavior]
-[bad input or failure behavior]
-```
+def test_unknown_lang_falls_back():  # hidden edge case
+    got = choose_strategy("xx", True)
+    assert got == "asr", f"unknown lang harus fallback 'asr', dapat '{got}'"
 
-Tests must be the spec: enough to derive correct behavior, but not so detailed that they reveal the original implementation. Test observable behavior, not private structure.
-
-### Conceptual Exercise
-
-Use this when runner detection is unclear, file writes are declined, or runnable tests would require unsafe scaffolding.
-
-```
-# Conceptual Exercise: <behavior-or-function-name>
-
-Reimplement this behavior in the project style:
-
-1. Happy path: [observable input/output or state change]
-2. Edge case: [boundary behavior]
-3. Failure case: [error, rejection, or fallback behavior]
-
-When done, explain the implementation choices and share test output if available.
+def test_empty_lang_raises():        # hidden failure case
+    import pytest
+    with pytest.raises(ValueError):
+        choose_strategy("", True)
 ```
 
-### JS/TS Example
+### Conceptual Exercise (fallback)
 
-Only use this shape when `package.json` and the repo test setup make it safe.
+Use when runner detection is unclear, file writes are declined, or runnable tests would require unsafe scaffolding. Keep the same problem/examples/constraints structure, but the user reports results in chat instead of running `run.sh`.
 
-```typescript
-// exercise.ts
-export function functionName(param: Type): ReturnType {
-  throw new Error("Not implemented")
-}
+## Phase 2: run.sh
+
+One self-contained runner per exercise. Make it executable (`chmod +x run.sh`). Interface for every language:
+
+```
+./run.sh                     # all tests, verbose (shows logs)
+./run.sh <test_name>         # one test function, verbose
+./run.sh -q                  # all tests, quiet summary
+./run.sh -q <test_name>      # one test function, quiet
 ```
 
-```typescript
-// exercise.test.ts
-import { describe, it, expect } from "vitest"
-import { functionName } from "./exercise"
+The script resolves its own directory, so it works from anywhere. Pick the body that matches the detected language.
 
-describe("functionName", () => {
-  it("handles the happy path", () => { /* behavior assertion */ })
-  it("handles an edge case", () => { /* behavior assertion */ })
-  it("throws or rejects on bad input", () => { /* behavior assertion */ })
-})
+### Python (pytest)
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"
+QUIET=0; [ "${1:-}" = "-q" ] && { QUIET=1; shift; }
+TEST="${1:-}"
+SEL="$DIR/test_exercise.py"
+[ -n "$TEST" ] && SEL="$SEL::$TEST"
+if [ "$QUIET" = 1 ]; then
+  exec python3 -m pytest "$SEL" -q
+else
+  exec python3 -m pytest "$SEL" -s -v   # -s shows print/log
+fi
 ```
 
-Run with the repo's detected command, such as `npm test -- .unvibe/exercises/<date>_<slug>` or `npx vitest run .unvibe/exercises/<date>_<slug>`.
+### Go (go test)
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"; cd "$DIR"
+QUIET=0; [ "${1:-}" = "-q" ] && { QUIET=1; shift; }
+TEST="${1:-}"
+ARGS=(); [ -n "$TEST" ] && ARGS+=(-run "$TEST")
+if [ "$QUIET" = 1 ]; then
+  exec go test "${ARGS[@]}" ./...
+else
+  exec go test -v "${ARGS[@]}" ./...    # -v streams t.Log output
+fi
+```
+
+### JS/TS (vitest)
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"
+QUIET=0; [ "${1:-}" = "-q" ] && { QUIET=1; shift; }
+TEST="${1:-}"
+ARGS=(run "$DIR/exercise.test.ts"); [ -n "$TEST" ] && ARGS+=(-t "$TEST")
+if [ "$QUIET" = 1 ]; then
+  exec npx vitest "${ARGS[@]}"
+else
+  exec npx vitest "${ARGS[@]}" --reporter verbose
+fi
+```
+
+For other stacks, keep the same `[-q] [test_name]` interface and map verbose to the runner's "show logs + per-test names" flags, quiet to its summary mode.
 
 ## Candidate Identification Priorities
 
@@ -101,10 +148,10 @@ Run with the repo's detected command, such as `npm test -- .unvibe/exercises/<da
 4. Error handling or edge cases the agent added without discussion
 5. Any function the user would struggle to rewrite from memory
 
-Skip: trivial getters/setters, boilerplate, code self-evident from its name.
+Shortlist up to 3 (1–3). Skip trivial getters/setters, boilerplate, code self-evident from its name. Never pad the list with weak candidates to reach 3.
 
 ## Verification
 
-- Prefer running the detected test command yourself when you have repo access.
+- Prefer running the exercise's `run.sh` yourself when you have repo access.
 - If tests fail, explain the failing behavior in plain language and give one conceptual nudge, not code.
-- If you cannot run tests, ask the user to paste the command output before marking the exercise complete.
+- If you cannot run tests, ask the user to paste the `run.sh` output before marking the exercise complete.

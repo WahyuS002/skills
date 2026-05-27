@@ -3,9 +3,9 @@ name: unvibe
 description: >
   Code ownership session that turns AI-written code into understood code. The agent
   shortlists "vibe-y" pieces from recent changes, checks the user's confidence, then
-  guides explain/reimplement/test exercises without silently mutating the repo. Use
-  after an AI coding session, or on-demand when the user does not understand a
-  specific API, function, or behavior the agent wrote.
+  guides explain/reimplement/test exercises in a LeetCode-style format without silently
+  mutating the repo. Use after an AI coding session, or on-demand when the user does not
+  understand a specific API, function, or behavior the agent wrote.
 ---
 
 # Unvibe
@@ -33,7 +33,7 @@ description: >
 
 **Step 1 — Identify candidates**
 
-Silently find 3-5 pieces worth owning: external API calls, core business logic, non-obvious patterns, error handling, anything the user may not be able to rewrite from memory. Skip trivial getters, boilerplate, self-evident code.
+Silently find up to 3 pieces worth owning (1–3, never invent filler to reach 3): external API calls, core business logic, non-obvious patterns, error handling, anything the user may not be able to rewrite from memory. Skip trivial getters, boilerplate, self-evident code.
 
 Present them as a numbered shortlist with a short "why this matters" note, then ask the user which one to drill and how confident they feel about it.
 
@@ -41,17 +41,24 @@ Present them as a numbered shortlist with a short "why this matters" note, then 
 
 *Phase 1: Explain* — ask one focused question about intent, not line-by-line. Evaluate: solid → Phase 2, partial → one follow-up → Phase 2, fuzzy → you explain (3–4 sentences) → they repeat back → Phase 2. See [REFERENCE.md](REFERENCE.md) for question forms and rubric.
 
-*Phase 2: Reimplement* — if the user approves file writes, create `.unvibe/exercises/<YYYY-MM-DD>_<slug>/` with a no-hints `README.md`, an exercise file in the detected language, and native tests when runner detection is confident. If file writes are declined or native tests are not safe to generate, present a conceptual exercise spec in chat instead. See [REFERENCE.md](REFERENCE.md) for templates.
+*Phase 2: Reimplement (LeetCode-style)* — if the user approves file writes, create `.unvibe/exercises/<YYYY-MM-DD_HH-MM-SS>_<slug>/` containing:
+- `README.md` — a LeetCode-style problem statement: **Difficulty** (easy/medium/hard, assigned from branch count, edge cases, and external deps), **Problem**, **2–3 curated Examples** (concrete Input→Output, happy path only), **Constraints**, and the **Signature**.
+- an exercise file in the detected language — the signature plus a stub that fails clearly, no hints.
+- a test file — behavioral tests acting as the hidden "judge". Edge and failure cases live ONLY here, not in the README. Every assertion carries a descriptive message (case label + expected vs actual) so a failure explains itself.
+- `run.sh` — a language-aware runner (made executable). Verbose by default; `[-q]` for quiet; optional `[test_name]` to run a single test function. See [REFERENCE.md](REFERENCE.md) for templates.
 
-*Phase 3: Verify* — run the detected test command when repo access allows it. If tests fail, give one conceptual nudge and let the user revise. If the agent cannot run tests, ask the user to paste the output before moving on.
+If file writes are declined or native tests are not safe to generate, present a conceptual exercise spec in chat instead.
+
+*Phase 3: Verify* — run the exercise's `run.sh`. If tests fail, give one conceptual nudge and let the user revise. If the agent cannot run tests, ask the user to paste the output before moving on.
 
 **Step 3 — Session summary**
 
-List what they now own, what is still partial, and the exercise location or command used.
+List what they now own, what is still partial, and the exercise location or `run.sh` command used.
 
 ## Rules
 
 - One phase at a time: never ask them to explain and reimplement in the same message.
-- Never show the original code during Phase 2: they work from memory plus tests/spec.
+- Never show the original code during Phase 2: they work from memory plus the problem statement and tests.
+- Never reveal hidden edge/failure cases in the README — they surface only when a test goes red.
 - Hints during Phase 2: one conceptual nudge only, never code.
 - Keep generated tests behavioral. Do not assert private implementation details.
