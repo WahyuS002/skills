@@ -30,29 +30,45 @@ description: >
 - **On-demand**: file/function arg → read that specific code.
 - **Unclear**: ask "Which file or function do you want to unvibe?"
 
+## Bundled resources
+
+- `references/reference.md` — rubrics, priorities, and format adaptations. Consult this when you need the Phase 1 question forms, the difficulty rubric, the Examples-happy-path rule, or the per-status notes-body layout.
+- `assets/templates/` — `readme.md`, `index.md`, `test_python.py`, `test_go.go`, `test_ts.ts`. Read the relevant file, fill the `<TOKENS>`, then `Write` the substituted file to the exercise dir.
+- `assets/runners/python.sh`, `assets/runners/go.sh`, `assets/runners/ts.sh` — copy the matching one to the exercise dir as `run.sh`, `chmod +x`. For other stacks, follow the same `[-q] [test_name]` interface.
+- `scripts/render_notes.py` — render `notes.md` with status-conditional body sections. Use this in Phase 4 instead of hand-writing the file.
+- `scripts/update_index.py` — update `.unvibe/INDEX.md` in place from a `notes.md` frontmatter. Use this after every `notes.md` write (including re-drills).
+- `scripts/quick_validate.sh` — self-check that a generated exercise dir is well-formed (dir name, README difficulty tag, executable run.sh, test + stub files). Run at the end of Phase 2.
+
 ## Workflow
 
 **Step 1 — Identify candidates**
 
-Silently find up to 3 pieces worth owning (1–3, never invent filler to reach 3): external API calls, core business logic, non-obvious patterns, error handling, anything the user may not be able to rewrite from memory. Skip trivial getters, boilerplate, self-evident code.
+Silently find up to 3 pieces worth owning (1–3, never invent filler to reach 3); see `references/reference.md` → "Candidate identification priorities" for the selection criteria.
 
 Present them as a numbered shortlist with a short "why this matters" note, then ask the user which one to drill and how confident they feel about it.
 
 **Step 2 — Exercise loop** (repeat per selected piece)
 
-*Phase 1: Explain* — ask one focused question about intent, not line-by-line. Evaluate: solid → Phase 2, partial → one follow-up → Phase 2, fuzzy → you explain (3–4 sentences) → they repeat back → Phase 2. See [REFERENCE.md](REFERENCE.md) for question forms and rubric.
+*Phase 1: Explain* — ask one focused question about intent, not line-by-line. Evaluate solid → Phase 2, partial → one follow-up → Phase 2, fuzzy → you explain (3–4 sentences) → they repeat back → Phase 2. See `references/reference.md` → "Phase 1: Evaluation rubric".
 
 *Phase 2: Reimplement (LeetCode-style)* — if the user approves file writes, create `.unvibe/exercises/<YYYY-MM-DD_HH-MM-SS>_<slug>/` containing:
-- `README.md` — a LeetCode-style problem statement: **Difficulty** (easy/medium/hard, assigned from branch count, edge cases, and external deps), **Problem**, **2–3 curated Examples** (concrete Input→Output, happy path only), **Constraints**, and the **Signature**.
-- an exercise file in the detected language — the signature plus a stub that fails clearly, no hints.
-- a test file — behavioral tests acting as the hidden "judge". Edge and failure cases live ONLY here, not in the README. Every assertion carries a descriptive message (case label + expected vs actual) so a failure explains itself.
-- `run.sh` — a language-aware runner (made executable). Verbose by default; `[-q]` for quiet; optional `[test_name]` to run a single test function. See [REFERENCE.md](REFERENCE.md) for templates.
 
-If file writes are declined or native tests are not safe to generate, present a conceptual exercise spec in chat instead.
+1. `README.md` — Read `assets/templates/readme.md`, fill the `<TOKENS>` (`<DIFFICULTY>` per the rubric, `<PIECE_NAME>`, `<SOURCE_PATH>`, `<PROBLEM_DESCRIPTION>`, `<EXAMPLES_BLOCK>` *happy-path only*, `<CONSTRAINTS_LIST>`, `<LANG>`, `<SIGNATURE_BLOCK>`), `Write` to the exercise dir.
+2. `exercise.<ext>` — write the public signature plus a stub that fails clearly (e.g. `raise NotImplementedError`, `panic("not implemented")`, `throw new Error("not implemented")`). No hints.
+3. `test_exercise.<ext>` — Read the matching `assets/templates/test_<lang>.<ext>`, fill `<PIECE_NAME>` and add the hidden edge / failure cases. Every assertion must carry a descriptive message; edge and failure cases live ONLY in this file, never in the README.
+4. `run.sh` — copy the matching `assets/runners/<lang>.sh` to the exercise dir, `chmod +x`. Verbose by default; `[-q]` for quiet; optional `[test_name]` for one test.
+
+After all four files exist, run `bash scripts/quick_validate.sh <exercise-dir>` and address any failure before moving on. If file writes are declined or native tests are not safe to generate, present a conceptual exercise spec in chat instead (see `references/reference.md` → "Phase 2: Conceptual exercise fallback").
 
 *Phase 3: Verify* — run the exercise's `run.sh`. If tests fail, give one conceptual nudge and let the user revise. If the agent cannot run tests, ask the user to paste the output before moving on.
 
-*Phase 4: Capture* — draft a per-piece `notes.md` reflecting what actually happened, regardless of outcome: frontmatter with `status` set to `owned` / `partial` / `explained-only` / `abandoned` plus distilled body sections (what it does, the non-obvious "why", gotchas you missed, your reimplementation choice, what to re-check months from now). Show the draft to the user, accept edits, then write `.unvibe/exercises/<ts>_<slug>/notes.md` and update `.unvibe/INDEX.md` (one row per piece — update in place, don't duplicate, on re-drill). On re-drill of the same piece: append a new dated section to the existing `notes.md`; never overwrite earlier sections. See [REFERENCE.md](REFERENCE.md) for the notes template, status-specific body sections, and INDEX format.
+*Phase 4: Capture* — draft per-piece notes that reflect what actually happened, regardless of outcome:
+
+1. Compose a config dict (date, first_drilled, piece, source, confidence_before/after, status one of `owned` / `partial` / `explained-only` / `abandoned`, time_minutes, difficulty, tags, re_drills, and the body `sections`). Save to a temp JSON file.
+2. Render: `python scripts/render_notes.py --config <tmp.json> > <exercise-dir>/notes.md`. The script handles status-conditional body layout.
+3. Show the rendered draft to the user. Accept their edits (overwrite the file if they request changes). Never persist notes without approval.
+4. After the file is written, update the workspace index: `python scripts/update_index.py --notes <exercise-dir>/notes.md`.
+5. On re-drill of the same piece: append a new dated section to the existing `notes.md` (do not overwrite earlier sections), bump `re_drills`, then re-run `update_index.py`. See `references/reference.md` → "Phase 4: Re-drill append pattern".
 
 **Step 3 — Session summary**
 
