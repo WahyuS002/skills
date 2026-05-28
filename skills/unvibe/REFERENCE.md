@@ -47,8 +47,11 @@ Output: <result>
 <exact public signature in the detected language>
 ```
 
-- **Difficulty** (`EASY`/`MEDIUM`/`HARD`) is assigned from branch count, number of edge cases, and external dependencies.
-- Show only happy-path examples. Keep edge cases and failure cases OUT of the README — they live in the tests and surface only when a test goes red.
+- **Difficulty** (`EASY`/`MEDIUM`/`HARD`) is assigned with this rubric, so labels stay comparable across exercises:
+  - `EASY` — pure transformation, single branch or simple guard, no state, no concurrency, no external API.
+  - `MEDIUM` — multi-way branching driven by a small invariant set (e.g. whitelist + normalization + edge guard), OR a single external library call whose decoded payload needs non-trivial handling.
+  - `HARD` — at least two of: concurrency / thread-safety, mutable state shared across calls, non-trivial algorithm (timing math, data structure), security-sensitive error collapsing, external API with retry / expiry semantics.
+- **Examples are happy-path only.** Every entry under `## Examples` must be a successful outcome. Failure cases — including the most basic missing-input / 401 / 4xx / validation error — MUST NOT appear in Examples. If an Example's Output is an error, status code, or `{ok:false, ...}`, delete it and move that case to the hidden tests. Examples prove the function is *reachable*; tests prove it's *correct*.
 
 ### Test file — the hidden judge
 
@@ -110,15 +113,18 @@ fi
 
 ```bash
 #!/usr/bin/env bash
+# Branches written out explicitly so the script stays safe under macOS
+# bash 3.2 + `set -u` (an empty array + "${ARGS[@]}" would error there).
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"; cd "$DIR"
 QUIET=0; [ "${1:-}" = "-q" ] && { QUIET=1; shift; }
 TEST="${1:-}"
-ARGS=(); [ -n "$TEST" ] && ARGS+=(-run "$TEST")
 if [ "$QUIET" = 1 ]; then
-  exec go test "${ARGS[@]}" ./...
+  if [ -n "$TEST" ]; then exec go test -run "$TEST" ./...
+  else                    exec go test ./...; fi
 else
-  exec go test -v "${ARGS[@]}" ./...    # -v streams t.Log output
+  if [ -n "$TEST" ]; then exec go test -v -run "$TEST" ./...   # -v streams t.Log output
+  else                    exec go test -v ./...; fi
 fi
 ```
 
