@@ -3,9 +3,10 @@ name: unvibe
 description: >
   Code ownership session that turns AI-written code into understood code. The agent
   shortlists "vibe-y" pieces from recent changes, checks the user's confidence, then
-  guides explain/reimplement/test exercises in a LeetCode-style format without silently
-  mutating the repo. Use after an AI coding session, or on-demand when the user does not
-  understand a specific API, function, or behavior the agent wrote.
+  guides explain/reimplement/test exercises in a LeetCode-style format and captures
+  distilled per-piece ownership notes — all without silently mutating the repo. Use
+  after an AI coding session, or on-demand when the user does not understand a
+  specific API, function, or behavior the agent wrote.
 ---
 
 # Unvibe
@@ -51,9 +52,11 @@ If file writes are declined or native tests are not safe to generate, present a 
 
 *Phase 3: Verify* — run the exercise's `run.sh`. If tests fail, give one conceptual nudge and let the user revise. If the agent cannot run tests, ask the user to paste the output before moving on.
 
+*Phase 4: Capture* — draft a per-piece `notes.md` reflecting what actually happened, regardless of outcome: frontmatter with `status` set to `owned` / `partial` / `explained-only` / `abandoned` plus distilled body sections (what it does, the non-obvious "why", gotchas you missed, your reimplementation choice, what to re-check months from now). Show the draft to the user, accept edits, then write `.unvibe/exercises/<ts>_<slug>/notes.md` and update `.unvibe/INDEX.md` (one row per piece — update in place, don't duplicate, on re-drill). On re-drill of the same piece: append a new dated section to the existing `notes.md`; never overwrite earlier sections. See [REFERENCE.md](REFERENCE.md) for the notes template, status-specific body sections, and INDEX format.
+
 **Step 3 — Session summary**
 
-List what they now own, what is still partial, and the exercise location or `run.sh` command used.
+Briefly highlight what changed this session — pieces now owned, still partial, where the exercises live. `.unvibe/INDEX.md` is the authoritative log; the chat summary just calls out the deltas.
 
 ## Rules
 
@@ -62,3 +65,4 @@ List what they now own, what is still partial, and the exercise location or `run
 - Never reveal hidden edge/failure cases in the README — they surface only when a test goes red.
 - Hints during Phase 2: one conceptual nudge only, never code.
 - Keep generated tests behavioral. Do not assert private implementation details.
+- `notes.md` is collaborative: agent drafts after each piece, user approves or edits, then it's written. Never save notes without showing the user the draft.

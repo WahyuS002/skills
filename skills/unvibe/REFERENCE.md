@@ -146,6 +146,100 @@ fi
 
 For other stacks, keep the same `[-q] [test_name]` interface and map verbose to the runner's "show logs + per-test names" flags, quiet to its summary mode.
 
+## Phase 4: Capture (notes.md + INDEX.md)
+
+Persist what was learned (or where it got stuck) so future-them can pick the piece up cold months later. The agent **drafts**, the user **approves or edits**, then the file is written. Notes are written regardless of outcome — the `status` field reflects reality, not just successes.
+
+### notes.md — per-piece
+
+`.unvibe/exercises/<ts>_<slug>/notes.md`. One file per piece. On a re-drill of the same piece, append a new dated section to the bottom and update the frontmatter to the latest state; never overwrite earlier sections.
+
+```
+---
+date: <YYYY-MM-DD>            # latest drill
+first_drilled: <YYYY-MM-DD>   # set on first write, preserved on re-drill
+piece: <symbol-or-behavior>
+source: <file-path>
+confidence_before: <fuzzy | partial | solid>
+confidence_after:  <fuzzy | partial | solid>
+status: <owned | partial | explained-only | abandoned>
+time_minutes: <int>
+difficulty: <EASY | MEDIUM | HARD>   # mirrors the README label
+tags: [<short>, <free-form>, <list>]
+re_drills: <int>              # 0 on first write
+---
+
+# <piece> — <status> <date>
+
+## What it does (in 2 lines)
+[plain-English behavior, not line-by-line]
+
+## The non-obvious part (the "why")
+[the design decision that wasn't obvious from reading the code]
+
+## Gotchas I missed at first
+- [specific case the user got wrong or didn't see in Phase 1]
+- [edge case surfaced by a hidden test going red]
+
+## My reimplementation choice
+[what shape the user used in Phase 2 and why — short]
+
+## What to re-check in 3 months
+[the question future-them should be able to answer; the trap to avoid]
+```
+
+Body sections adapt to `status`:
+
+- **`owned`** — all five sections above.
+- **`partial`** — keep "Gotchas" and "Reimpl choice" if Phase 2/3 ran far enough to produce them, and add a final **`## What I'm still stuck on`**.
+- **`explained-only`** — drop "Reimpl choice"; add **`## Why I didn't drill further`** (often: "Phase 1 was solid, didn't need the reimplementation").
+- **`abandoned`** — minimal: "What it does" (whatever was reached) plus **`## Why I stopped`**.
+
+### Re-drill: append, don't overwrite
+
+When the same piece is drilled again later, append a dated section above the prior content and update the frontmatter. Future-them benefits from seeing the trajectory ("I forgot this exact gotcha 3 months ago too").
+
+```
+---
+date: 2026-08-15            # latest
+first_drilled: 2026-05-28
+re_drills: 1
+status: owned
+...
+---
+
+# choose_strategy — owned 2026-08-15
+
+## 2026-08-15 re-drill (still owned)
+
+### What I forgot since last time
+- [the gotcha that returned]
+
+### Refresher (delta from original)
+[only the points needed to re-anchor; not a full rewrite]
+
+---
+
+## 2026-05-28 original
+[original notes preserved verbatim]
+```
+
+### INDEX.md — workspace-level
+
+`.unvibe/INDEX.md`. A single table, **one row per piece** (not per drill). On re-drill, update the existing row's `Date`, `Status`, and `Conf.` in place; do not append a duplicate row. Add a `(×N)` suffix to `Status` to mark re-drill count.
+
+```
+# Unvibe ownership log
+
+| Date       | Piece            | Source             | Status       | Conf. |
+|------------|------------------|--------------------|--------------|-------|
+| 2026-05-28 | choose_strategy  | process_video.py   | owned        | ✅    |
+| 2026-05-28 | process_video    | process_video.py   | partial      | ⚠️    |
+| 2026-08-15 | choose_strategy  | process_video.py   | owned (×2)   | ✅    |
+```
+
+Conf. icons: `✅` solid, `⚠️` partial, `❓` fuzzy. The INDEX is the authoritative log; the session-end summary in chat just calls out the deltas.
+
 ## Candidate Identification Priorities
 
 1. External API calls or library methods the user may have never typed themselves
