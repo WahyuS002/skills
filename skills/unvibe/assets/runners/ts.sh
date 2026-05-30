@@ -30,18 +30,25 @@ show_help() {
 Per-exercise runner for TypeScript / vitest exercises.
 
 Usage:
-  ./run.sh                         Run all tests (verbose reporter)
-  ./run.sh -q                      Run all tests (default reporter, quiet)
+  ./run.sh                         Run all tests (verbose reporter — tree view)
+  ./run.sh -q                      Run all tests (dot reporter — 1 char per test)
   ./run.sh --list                  List tests with index numbers, then exit
   ./run.sh -l                      Alias for --list
   ./run.sh <N>                     Run test #N from --list (exact)
-  ./run.sh -q <N>                  Run test #N quietly
+  ./run.sh -q <N>                  Run test #N (dot reporter)
   ./run.sh "<name pattern>"        Run tests by name (vitest -t, substring)
   ./run.sh -h | --help             Show this help
 
 Recommended workflow for "run one specific test":
   1) ./run.sh --list      # see numbered list of every it()
   2) ./run.sh 3           # run #3 — exact, no substring guessing
+
+Reporters:
+  default (-v sense): `--reporter=verbose` — full tree, every it() name
+                      printed, ↓ markers for skipped tests.
+  -q sense:           `--reporter=dot`     — one '.' / 'F' / 'S' per test
+                      plus a summary. Use this when you only care about
+                      pass/fail counts and don't want the full test list.
 
 Notes:
   vitest -t is a SUBSTRING/regex match — it will run every test whose name
@@ -104,8 +111,10 @@ fi
 # --- exec vitest ------------------------------------------------------------
 ARGS=(run "$TEST_FILE")
 [ -n "$TEST" ] && ARGS+=(-t "$TEST")
+# Quiet really means quiet: dot reporter (one char per test) + skip-hide.
+# Without -q we want the full tree so the user can see every it() name.
 if [ "$QUIET" = 1 ]; then
-  exec npx vitest "${ARGS[@]}"
+  exec npx vitest "${ARGS[@]}" --reporter=dot --hideSkippedTests
 else
-  exec npx vitest "${ARGS[@]}" --reporter verbose
+  exec npx vitest "${ARGS[@]}" --reporter=verbose
 fi
