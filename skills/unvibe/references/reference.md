@@ -10,6 +10,7 @@ This file holds **guidance** (rubrics, priorities, format adaptations) that does
 - [Phase 2: Difficulty rubric](#phase-2-difficulty-rubric)
 - [Phase 2: Examples rule (happy-path only)](#phase-2-examples-rule-happy-path-only)
 - [Phase 2: Conceptual exercise fallback](#phase-2-conceptual-exercise-fallback)
+- [Phase 2 / 3: run.sh contract](#phase-2--3-runsh-contract)
 - [Phase 4: Notes body adaptations per status](#phase-4-notes-body-adaptations-per-status)
 - [Phase 4: Re-drill append pattern](#phase-4-re-drill-append-pattern)
 - [Candidate identification priorities](#candidate-identification-priorities)
@@ -65,6 +66,25 @@ Examples prove the function is *reachable*; tests prove it's *correct*. This rul
 ## Phase 2: Conceptual exercise fallback
 
 Use when runner detection is unclear, file writes are declined, or runnable tests would require unsafe scaffolding. Keep the same Problem / Examples / Constraints / Signature structure as the README template, but the user reports results in chat instead of running `run.sh`. No `assets/runners/*.sh` is needed; no `quick_validate.sh` check is required.
+
+## Phase 2 / 3: run.sh contract
+
+Every `assets/runners/*.sh` template exposes the same five-mode CLI so the user gets a consistent experience across languages. The README template advertises this contract under "How to run"; the `run.sh` itself prints the full contract via `./run.sh --help`.
+
+| Command | Behaviour | Notes |
+|---|---|---|
+| `./run.sh` | Run all tests, verbose | `-s -v` (pytest), `-v` (go test), `--reporter verbose` (vitest) |
+| `./run.sh -q` | Run all tests, quiet | Default reporter / no `-v` / `-q` (pytest) |
+| `./run.sh --list` *(ts/go only)* | List every test with index numbers | pytest is skipped here — its `::name` is already exact |
+| `./run.sh <N>` *(ts/go only)* | Run test #N from `--list` (exact) | Numeric index resolves to anchored regex (`^Name$` for go) or to the resolved vitest name |
+| `./run.sh <name>` | Run by name pattern | pytest `::name` (exact), vitest `-t` (substring), go test `-run` (regex) |
+| `./run.sh -h` / `--help` | Print runner usage + language notes, then exit | Each runner ships an inline header comment AND a `cat <<EOF` help block |
+
+**Why the index mode exists.** vitest `-t` and `go test -run` are substring/regex matches against free-form descriptions (or against identifiers prone to prefix collisions, like `TestFoo` matching `TestFooBar`). The numeric index sidesteps the matching semantics entirely — it resolves to a stable test name and either passes it verbatim (vitest) or wraps it in `^…$` anchors (go test). Use this whenever the user says "run exactly that one".
+
+**Why python doesn't get `--list`.** pytest's `::` separator already provides an exact, identifier-based selector; layering an index would be ceremony with no upside. The python runner still ships `--help` for consistency.
+
+**Multi-word name patterns must be quoted.** Without quotes the shell splits the description into separate `argv` entries, and only `$1` reaches the runner — a footgun that historically caused over-matched runs. The `--help` text explicitly warns about this.
 
 ## Phase 4: Notes body adaptations per status
 

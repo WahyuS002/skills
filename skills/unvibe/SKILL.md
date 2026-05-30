@@ -56,7 +56,7 @@ Present them as a numbered shortlist with a short "why this matters" note, then 
 1. `README.md` — Read `assets/templates/readme.md`, fill the `<TOKENS>` (`<DIFFICULTY>` per the rubric, `<PIECE_NAME>`, `<SOURCE_PATH>`, `<PROBLEM_DESCRIPTION>`, `<EXAMPLES_BLOCK>` *happy-path only*, `<CONSTRAINTS_LIST>`, `<LANG>`, `<SIGNATURE_BLOCK>`), `Write` to the exercise dir.
 2. `exercise.<ext>` — write the public signature plus a stub that fails clearly (e.g. `raise NotImplementedError`, `panic("not implemented")`, `throw new Error("not implemented")`). No hints.
 3. `test_exercise.<ext>` — Read the matching `assets/templates/test_<lang>.<ext>`, fill `<PIECE_NAME>` and add the hidden edge / failure cases. Every assertion must carry a descriptive message; edge and failure cases live ONLY in this file, never in the README.
-4. `run.sh` — copy the matching `assets/runners/<lang>.sh` to the exercise dir, `chmod +x`. Verbose by default; `[-q]` for quiet; optional `[test_name]` for one test.
+4. `run.sh` — copy the matching `assets/runners/<lang>.sh` to the exercise dir, `chmod +x`. Verbose by default; `[-q]` for quiet; `--list` + numeric index for *exact* test selection (TS / Go); `<test_name>` for pattern match; `--help` prints the full contract. See `references/reference.md` → "Phase 2 / 3: run.sh contract".
 
 After all four files exist, run `bash scripts/quick_validate.sh <exercise-dir>` and address any failure before moving on. If file writes are declined or native tests are not safe to generate, present a conceptual exercise spec in chat instead (see `references/reference.md` → "Phase 2: Conceptual exercise fallback").
 
