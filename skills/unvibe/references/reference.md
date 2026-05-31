@@ -9,6 +9,7 @@ This file holds **guidance** (rubrics, priorities, format adaptations) that does
 - [Phase 2: Exercise layout + asset map](#phase-2-exercise-layout--asset-map)
 - [Phase 2: Difficulty rubric](#phase-2-difficulty-rubric)
 - [Phase 2: Examples rule (happy-path only)](#phase-2-examples-rule-happy-path-only)
+- [Reference grounding (external-surface facts)](#reference-grounding-external-surface-facts)
 - [Phase 2: Conceptual exercise fallback](#phase-2-conceptual-exercise-fallback)
 - [Phase 2 / 3: run.sh contract](#phase-2--3-runsh-contract)
 - [Phase 4: Notes body adaptations per status](#phase-4-notes-body-adaptations-per-status)
@@ -62,6 +63,31 @@ The `<DIFFICULTY>` placeholder in `assets/templates/readme.md` is one of `EASY` 
 Every entry under `## Examples` in the generated README must be a **successful outcome**. Failure cases — including the most basic missing-input / 401 / 4xx / validation error — MUST NOT appear in Examples. If an Example's Output is an error, status code, or `{ok:false, ...}`, delete it and move that case to the hidden tests.
 
 Examples prove the function is *reachable*; tests prove it's *correct*. This rule is enforced as much by `quick_validate.sh` as by your judgment — but the script can't tell semantic happy-path from semantic failure, so the human-judgement part stays with you.
+
+## Reference grounding (external-surface facts)
+
+When you author an exercise (or explain a fuzzy piece in Phase 1), you will state facts. Some you authored; some belong to the platform. **Ground the platform ones against a real source before asserting them, and surface the vetted links in the Phase 4 notes** — never in the Phase 2 README.
+
+**The author-vs-platform test.** Ask of each load-bearing claim: *did I author this fact, or did the platform/spec?*
+
+- **Authored** — claims about *this* code's behavior ("the handler routes `ArrowRight` to `next()`", "the refill rounds down"). No external source exists; never ground these.
+- **External-surface** — behavior of a platform, standard library, framework, language spec, third-party API, or protocol that you did **not** write: DOM semantics (`tagName` is uppercase for HTML elements), stdlib contracts, framework lifecycle, HTTP status meanings, a library method's documented behavior. These are exactly candidate-priority #1 ("API calls or library methods the user may have never typed themselves"). **Ground every external-surface fact you assert.**
+
+**How to ground (during authoring / explanation).**
+
+1. Before writing an external-surface fact as an *absolute* ("X is always Y", "you can rely on this"), verify it with `WebSearch` / `WebFetch` against the canonical doc (MDN, language/stdlib docs, the library's own reference).
+2. If verified → you may assert it, and record the link for the Phase 4 trail (see entry format below).
+3. If you **cannot** verify it (web unavailable, page not found, uncertain) → **downgrade the wording from an absolute to a hedge** ("assume uppercase for this exercise; verify for your environment") and make sure the hidden tests do **not** silently bake in the unverified fact. Do not block exercise generation over this.
+
+**The one non-negotiable: never emit a citation URL you did not actually fetch.** A plausible-looking-but-fabricated link is strictly worse than no link — it launders a hallucination as authority. No web access this session ⇒ no links in the trail, and hedge the prose.
+
+**Trail entry format (Phase 4 notes, `Further reading` section).** One verified link, one line on the exact fact it grounds:
+
+```
+- [Element.tagName — MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/tagName) — confirms tagName is uppercase for HTML elements (the INPUT/TEXTAREA guard)
+```
+
+The `Further reading` section is rendered by `scripts/render_notes.py` for `owned` / `partial` / `explained-only` only, and only when non-empty. `abandoned` never carries it; a session that asserted no external-surface facts gets no section at all.
 
 ## Phase 2: Conceptual exercise fallback
 

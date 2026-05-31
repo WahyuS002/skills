@@ -7,6 +7,12 @@ The notes file's body section list depends on `status`:
     explained-only -> What it does / Why / Gotchas / Why I didn't drill further
     abandoned      -> What it does / Why I stopped
 
+"Further reading" is an OPTIONAL trailing section for owned / partial /
+explained-only: it holds the vetted external-surface reference trail (verified
+doc links + a one-line anchor each). It renders ONLY when the config supplies
+non-empty content for it — a session with zero external-surface facts gets no
+empty heading. `abandoned` never carries it.
+
 Doing this conditional logic in Python keeps the agent from having to remember
 which sections apply to which status — the single failure mode iter-1 showed
 is exactly this kind of structural-rule compliance.
@@ -32,9 +38,13 @@ The config JSON shape:
         "The non-obvious part (the \"why\")": "...",
         "Gotchas I missed at first": "- ...\n- ...",
         "My reimplementation choice": "...",
-        "What to re-check in 3 months": "..."
+        "What to re-check in 3 months": "...",
+        "Further reading": "- [Title - Source](url) - one line on the exact fact it grounds"
       }
     }
+
+"Further reading" is optional: omit it (or leave it empty) and the section is
+dropped rather than rendered with a placeholder.
 
 Output goes to stdout — redirect to the notes.md path.
 """
@@ -46,6 +56,10 @@ from pathlib import Path
 
 VALID_STATUSES = ["owned", "partial", "explained-only", "abandoned"]
 
+# Heading rendered only when the config supplies non-empty content for it.
+# (The external-surface reference trail — absent when no facts were grounded.)
+FURTHER_READING = "Further reading"
+
 SECTIONS_BY_STATUS = {
     "owned": [
         "What it does (in 2 lines)",
@@ -53,6 +67,7 @@ SECTIONS_BY_STATUS = {
         "Gotchas I missed at first",
         "My reimplementation choice",
         "What to re-check in 3 months",
+        FURTHER_READING,
     ],
     "partial": [
         "What it does (in 2 lines)",
@@ -61,18 +76,24 @@ SECTIONS_BY_STATUS = {
         "My reimplementation choice",
         "What to re-check in 3 months",
         "What I'm still stuck on",
+        FURTHER_READING,
     ],
     "explained-only": [
         "What it does (in 2 lines)",
         "The non-obvious part (the \"why\")",
         "Gotchas I missed at first",
         "Why I didn't drill further",
+        FURTHER_READING,
     ],
     "abandoned": [
         "What it does (in 2 lines)",
         "Why I stopped",
     ],
 }
+
+# Headings that are dropped entirely when the config has no content for them,
+# instead of being emitted with a "<TODO>" placeholder.
+OPTIONAL_SECTIONS = {FURTHER_READING}
 
 
 def render(cfg: dict) -> str:
@@ -103,7 +124,11 @@ def render(cfg: dict) -> str:
     sections = cfg.get("sections", {})
     body_parts = []
     for heading in SECTIONS_BY_STATUS[status]:
-        content = sections.get(heading, "<TODO>")
+        content = sections.get(heading)
+        if heading in OPTIONAL_SECTIONS and not (content and content.strip()):
+            continue
+        if content is None:
+            content = "<TODO>"
         body_parts.append(f"\n## {heading}\n\n{content}\n")
 
     return fm + "".join(body_parts)

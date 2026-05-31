@@ -32,7 +32,7 @@ description: >
 
 ## Bundled resources
 
-- `references/reference.md` — rubrics, priorities, and format adaptations. Consult this when you need the Phase 1 question forms, the difficulty rubric, the Examples-happy-path rule, or the per-status notes-body layout.
+- `references/reference.md` — rubrics, priorities, and format adaptations. Consult this when you need the Phase 1 question forms, the difficulty rubric, the Examples-happy-path rule, the reference-grounding rule for external-surface facts, or the per-status notes-body layout.
 - `assets/templates/` — `readme.md`, `index.md`, `test_python.py`, `test_go.go`, `test_ts.ts`. Read the relevant file, fill the `<TOKENS>`, then `Write` the substituted file to the exercise dir.
 - `assets/runners/python.sh`, `assets/runners/go.sh`, `assets/runners/ts.sh` — copy the matching one to the exercise dir as `run.sh`, `chmod +x`. For other stacks, follow the same `[-q] [test_name]` interface.
 - `scripts/render_notes.py` — render `notes.md` with status-conditional body sections. Use this in Phase 4 instead of hand-writing the file.
@@ -53,7 +53,7 @@ Present them as a numbered shortlist with a short "why this matters" note, then 
 
 *Phase 2: Reimplement (LeetCode-style)* — if the user approves file writes, create `.unvibe/exercises/<YYYY-MM-DD_HH-MM-SS>_<slug>/` containing:
 
-1. `README.md` — Read `assets/templates/readme.md`, fill the `<TOKENS>` (`<DIFFICULTY>` per the rubric, `<PIECE_NAME>`, `<SOURCE_PATH>`, `<PROBLEM_DESCRIPTION>`, `<EXAMPLES_BLOCK>` *happy-path only*, `<CONSTRAINTS_LIST>`, `<LANG>`, `<SIGNATURE_BLOCK>`), `Write` to the exercise dir.
+1. `README.md` — Read `assets/templates/readme.md`, fill the `<TOKENS>` (`<DIFFICULTY>` per the rubric, `<PIECE_NAME>`, `<SOURCE_PATH>`, `<PROBLEM_DESCRIPTION>`, `<EXAMPLES_BLOCK>` *happy-path only*, `<CONSTRAINTS_LIST>`, `<LANG>`, `<SIGNATURE_BLOCK>`), `Write` to the exercise dir. **Ground external-surface facts before asserting them**: any claim about a platform / stdlib / framework / language-spec / third-party API you did not author must be verified with `WebSearch`/`WebFetch` and stated as an absolute only if verified; otherwise hedge it. Keep the *links* out of the README — they belong in the Phase 4 trail. See `references/reference.md` → "Reference grounding (external-surface facts)". Never write a citation URL you did not actually fetch.
 2. `exercise.<ext>` — write the public signature plus a stub that fails clearly (e.g. `raise NotImplementedError`, `panic("not implemented")`, `throw new Error("not implemented")`). No hints.
 3. `test_exercise.<ext>` — Read the matching `assets/templates/test_<lang>.<ext>`, fill `<PIECE_NAME>` and add the hidden edge / failure cases. Every assertion must carry a descriptive message; edge and failure cases live ONLY in this file, never in the README.
 4. `run.sh` — copy the matching `assets/runners/<lang>.sh` to the exercise dir, `chmod +x`. Verbose by default; `[-q]` for quiet; `--list` + numeric index for *exact* test selection (TS / Go); `<test_name>` for pattern match; `--help` prints the full contract. See `references/reference.md` → "Phase 2 / 3: run.sh contract".
@@ -64,7 +64,7 @@ After all four files exist, run `bash scripts/quick_validate.sh <exercise-dir>` 
 
 *Phase 4: Capture* — draft per-piece notes that reflect what actually happened, regardless of outcome:
 
-1. Compose a config dict (date, first_drilled, piece, source, confidence_before/after, status one of `owned` / `partial` / `explained-only` / `abandoned`, time_minutes, difficulty, tags, re_drills, and the body `sections`). Save to a temp JSON file.
+1. Compose a config dict (date, first_drilled, piece, source, confidence_before/after, status one of `owned` / `partial` / `explained-only` / `abandoned`, time_minutes, difficulty, tags, re_drills, and the body `sections`). Save to a temp JSON file. If you grounded any external-surface facts this session, add a `Further reading` entry to `sections` holding the vetted trail (one verified link + a one-line anchor each; format in `references/reference.md` → "Reference grounding"). Omit it when nothing was grounded — the renderer drops the empty section. Never include a link you did not actually fetch.
 2. Render: `python scripts/render_notes.py --config <tmp.json> > <exercise-dir>/notes.md`. The script handles status-conditional body layout.
 3. Show the rendered draft to the user. Accept their edits (overwrite the file if they request changes). Never persist notes without approval.
 4. After the file is written, update the workspace index: `python scripts/update_index.py --notes <exercise-dir>/notes.md`.

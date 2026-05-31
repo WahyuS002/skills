@@ -46,7 +46,10 @@
         "The exercise README.md is LeetCode-style: it includes a Difficulty label (EASY/MEDIUM/HARD), an Examples section with at least one concrete Input->Output pair, a Constraints section, and the function Signature",
         "The README shows only happy-path examples; edge cases and failure/error cases are NOT spelled out in the README (they are left to the hidden tests)",
         "An executable run.sh exists in the exercise directory; it invokes vitest, runs with a verbose reporter by default, accepts a -q flag for quiet mode, and accepts an optional single-test-name argument (mapped to -t)",
-        "The generated vitest file uses descriptive assertion messages so a failing test reports the case and expected-vs-actual"
+        "The generated vitest file uses descriptive assertion messages so a failing test reports the case and expected-vs-actual",
+        "No documentation/reference URL (e.g. developer.mozilla.org, nodejs.org, jwt.io, or a library's docs site) appears anywhere in the generated README or notes unless the transcript shows the agent actually fetched that URL via WebSearch/WebFetch first — a plausible-looking citation link with no corresponding fetch in the transcript is a failure",
+        "Any external-surface factual claim in the README (about JWT, the jsonwebtoken/jose library, or Node/JS runtime semantics — i.e. behavior the agent did not author) that was NOT verified against a fetched source is written as a hedge ('assume X for this exercise; verify in your environment'), not as an unqualified absolute ('always', 'guaranteed', 'you can rely on this without checking')",
+        "Reference links never appear in the Phase 2 README; if (and only if) the agent grounded one or more external-surface facts and a Phase 4 notes.md is produced, the vetted links appear there under a 'Further reading' section as 'link + one-line anchor' entries — and if nothing was grounded, no empty 'Further reading' section is emitted"
       ]
     }
   ]
