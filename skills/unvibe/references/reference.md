@@ -7,6 +7,7 @@ This file holds **guidance** (rubrics, priorities, format adaptations) that does
 - [Phase 1: Question forms](#phase-1-question-forms)
 - [Phase 1: Evaluation rubric](#phase-1-evaluation-rubric)
 - [Phase 2: Exercise layout + asset map](#phase-2-exercise-layout--asset-map)
+- [Phase 2: Right-sizing — slice large pieces into a progression](#phase-2-right-sizing--slice-large-pieces-into-a-progression)
 - [Phase 2: Difficulty rubric](#phase-2-difficulty-rubric)
 - [Phase 2: Examples rule (happy-path only)](#phase-2-examples-rule-happy-path-only)
 - [Reference grounding (external-surface facts)](#reference-grounding-external-surface-facts)
@@ -49,6 +50,74 @@ Templates use `<TOKENS>` (e.g. `<DIFFICULTY>`, `<PIECE_NAME>`) that the agent su
 3. `Write` the substituted file to the exercise dir.
 
 After all four files are in place, run `bash scripts/quick_validate.sh <exercise-dir>` as a shape-check before handing off to Phase 3.
+
+## Phase 2: Right-sizing — slice large pieces into a progression
+
+Before generating, decide whether the piece fits a single stub or needs to be **sliced**. One oversized stub is the most common way an exercise stops being a *learning* tool and becomes a wall the user bounces off — they don't know where to start, so they paste the original or give up.
+
+**Slice when any of these hold:**
+
+- The piece has more than one responsibility (e.g. computes layout *and* writes cells *and* wires validation).
+- The user rated confidence low (fuzzy, or 1–2 of 5) in Phase 1.
+- A faithful one-shot stub would be HARD, or more than ~25–30 lines to reimplement from memory.
+
+Keep it a **single** exercise when the piece is one cohesive idea (a pure transform, one guarded branch, one API call). Don't slice for slicing's sake — 2 steps is the floor; if you can't find at least two genuinely separable sub-skills, it isn't a slice candidate.
+
+**Layout.** The timestamped dir becomes a *container*; each step is its own leaf exercise in a subdir:
+
+```
+<YYYY-MM-DD_HH-MM-SS>_<slug>/
+  README.md                 <- progression map (skeleton below); first line carries the OVERALL difficulty tag
+  step1_<slug>/             <- leaf: exercise.<ext> + test_exercise.<ext> + run.sh (chmod +x)
+  step2_<slug>/
+  ...
+  stepN_<slug>/             <- final step = COMPOSE the earlier pieces into the whole
+  notes.md                  <- Phase 4, written once for the whole piece (container level)
+```
+
+Each `stepN_<slug>/` is a normal leaf exercise (same four files, same `run.sh` contract). The user does them in order: `cd step1_<slug> && ./run.sh`.
+
+**Ordering — easy → hard, concrete → orchestration:**
+
+1. **Pure functions first** — the small, side-effect-free helpers (mappings, calculations, guards). Usually EASY; they build momentum and confidence.
+2. **Stateful / library-touching steps next** — functions that mutate state, call the framework/library, or return the value a later step depends on (the "bridge" value).
+3. **The final step is always composition** — the real top-level function, reassembled from the steps just owned. By now it reads as a few lines of orchestration; *that realization is the payoff* ("the scary function was just glue").
+
+**Give earlier solutions forward.** From step 2 on, paste the reference solution of every earlier helper into the step's stub file under a clearly marked block:
+
+```python
+# --- GIVEN (solved in earlier steps — do not edit) ---
+def helper_from_step1(...): ...
+# --- TODO: implement this step ---
+def new_function(...):
+    raise NotImplementedError(...)
+```
+
+This lets the user implement only the new function, see how the pieces connect, and compare the given solution against the answer they wrote earlier. The final compose-step provides *all* helpers as GIVEN; the user writes only the orchestration.
+
+**Per-step difficulty.** Each step carries its own EASY/MEDIUM/HARD rating in the parent README's progression table (apply the difficulty rubric per step). The parent README's first-line tag is the *overall* difficulty — normally the hardest step.
+
+**Parent README skeleton** (this is the container README; it replaces the single-exercise `assets/templates/readme.md` for sliced pieces — the leaf step READMEs are optional, keep the per-step problem statement in the step's `exercise.<ext>` docstring/comment if you skip them):
+
+```
+# [<OVERALL_DIFFICULTY>] <piece> — sliced into <N> steps
+
+**Source:** `<source-path>` -> `<symbol>`
+
+Why sliced: <one line>. Do the steps in order; each is its own folder with its own run.sh.
+
+| Step | Folder | What you own | Level |
+|-----:|--------|--------------|-------|
+| 1 | `step1_<slug>/` | <pure helper …> | EASY |
+| … |
+| N | `stepN_<slug>/` | compose into `<piece>` | MEDIUM |
+
+How to run each step: `cd step1_<slug> && ./run.sh`   (full contract: ./run.sh --help)
+```
+
+Embed the relevant doc links (see "Reference grounding") next to the calls each step uses — a per-step convenience that matters most when the user has no editor autocomplete.
+
+**Validation & later phases.** `quick_validate.sh <container-dir>` auto-detects the sliced layout (presence of `stepN_*/` subdirs) and validates each step as a leaf (executable `run.sh` + a test file + an exercise stub) plus the container README's difficulty tag. Run **Phase 3 per step, in order**. Capture **Phase 4 notes once** for the whole piece, at the container level, after the final compose-step is green — the gotchas from individual steps become the bullets in *Gotchas I missed at first*.
 
 ## Phase 2: Difficulty rubric
 

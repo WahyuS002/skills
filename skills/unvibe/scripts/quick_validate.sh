@@ -5,12 +5,21 @@
 #
 # Usage: bash scripts/quick_validate.sh <path-to-exercise-dir>
 #
+# Supports two layouts:
+#   * single   — the container holds README + run.sh + test + exercise stub.
+#   * sliced   — the container holds a progression-map README + stepN_*/ leaf
+#                dirs; each leaf holds run.sh + test + exercise stub. Detected
+#                automatically by the presence of stepN_*/ subdirs.
+#
 # Checks (exits non-zero on the first failure):
-#   1. Directory name matches YYYY-MM-DD_HH-MM-SS_<slug>
+#   1. Container dir name matches YYYY-MM-DD_HH-MM-SS_<slug>
 #   2. README.md exists and the first line starts with [EASY|MEDIUM|HARD]
-#   3. run.sh exists and is executable
-#   4. At least one of: test_*.py, *_test.go, *.test.ts
-#   5. exercise.* stub file present
+#   3. run.sh exists and is executable          (per leaf)
+#   4. At least one of: test_*.py, *_test.go, *.test.ts   (per leaf)
+#   5. exercise.* stub file present             (per leaf)
+#
+# In the single layout the container itself is the (only) leaf. In the sliced
+# layout each stepN_*/ subdir is a leaf and the container is exempt from 3-5.
 #
 # Phase 4 may add a 6th check (notes.md exists) once notes are written.
 set -euo pipefail
@@ -28,7 +37,7 @@ fi
 
 NAME="$(basename "$DIR")"
 
-# 1. Directory name format ----------------------------------------------------
+# 1. Container dir name format ------------------------------------------------
 NAME_RE='^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}_.+$'
 if [[ ! "$NAME" =~ $NAME_RE ]]; then
   echo "FAIL [1/5] dir name '$NAME' does not match YYYY-MM-DD_HH-MM-SS_<slug>" >&2
@@ -48,37 +57,55 @@ if [[ ! "$FIRST_LINE" =~ $DIFF_RE ]]; then
   exit 1
 fi
 
-# 3. run.sh exists and is executable ------------------------------------------
-RUN="$DIR/run.sh"
-if [ ! -f "$RUN" ]; then
-  echo "FAIL [3/5] run.sh missing in $DIR" >&2
-  exit 1
-fi
-if [ ! -x "$RUN" ]; then
-  echo "FAIL [3/5] run.sh is not executable (chmod +x $RUN)" >&2
-  exit 1
-fi
+# Leaf checks (run.sh, test file, exercise stub) -----------------------------
+# $1 = leaf dir, $2 = label for messages. Exits non-zero on first failure.
+check_leaf() {
+  local leaf="$1" label="$2"
 
-# 4. At least one test file --------------------------------------------------
-HAS_TEST=0
-for pat in 'test_*.py' '*_test.go' '*.test.ts'; do
-  for f in "$DIR"/$pat; do
-    [ -e "$f" ] && HAS_TEST=1 && break 2
+  local run="$leaf/run.sh"
+  if [ ! -f "$run" ]; then
+    echo "FAIL [3/5] run.sh missing in $label" >&2
+    exit 1
+  fi
+  if [ ! -x "$run" ]; then
+    echo "FAIL [3/5] run.sh is not executable (chmod +x $run)" >&2
+    exit 1
+  fi
+
+  local has_test=0 pat f
+  for pat in 'test_*.py' '*_test.go' '*.test.ts'; do
+    for f in "$leaf"/$pat; do
+      [ -e "$f" ] && has_test=1 && break 2
+    done
   done
-done
-if [ "$HAS_TEST" -eq 0 ]; then
-  echo "FAIL [4/5] no test file (test_*.py / *_test.go / *.test.ts) in $DIR" >&2
-  exit 1
-fi
+  if [ "$has_test" -eq 0 ]; then
+    echo "FAIL [4/5] no test file (test_*.py / *_test.go / *.test.ts) in $label" >&2
+    exit 1
+  fi
 
-# 5. Exercise stub file ------------------------------------------------------
-HAS_EXERCISE=0
-for f in "$DIR"/exercise.*; do
-  [ -e "$f" ] && HAS_EXERCISE=1 && break
-done
-if [ "$HAS_EXERCISE" -eq 0 ]; then
-  echo "FAIL [5/5] no exercise.* stub file in $DIR" >&2
-  exit 1
-fi
+  local has_exercise=0
+  for f in "$leaf"/exercise.*; do
+    [ -e "$f" ] && has_exercise=1 && break
+  done
+  if [ "$has_exercise" -eq 0 ]; then
+    echo "FAIL [5/5] no exercise.* stub file in $label" >&2
+    exit 1
+  fi
+}
 
-echo "OK: $NAME passed all 5 shape checks"
+# Detect sliced layout: any stepN_*/ subdir -----------------------------------
+shopt -s nullglob
+STEPS=("$DIR"/step*/)
+shopt -u nullglob
+
+if [ "${#STEPS[@]}" -gt 0 ]; then
+  # Sliced: validate each step as a leaf; container is exempt from 3-5.
+  for step in "${STEPS[@]}"; do
+    check_leaf "${step%/}" "$(basename "${step%/}")"
+  done
+  echo "OK: $NAME (sliced, ${#STEPS[@]} steps) passed all shape checks"
+else
+  # Single: the container itself is the leaf.
+  check_leaf "$DIR" "$DIR"
+  echo "OK: $NAME passed all 5 shape checks"
+fi

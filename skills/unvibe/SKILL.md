@@ -37,7 +37,7 @@ description: >
 - `assets/runners/python.sh`, `assets/runners/go.sh`, `assets/runners/ts.sh` — copy the matching one to the exercise dir as `run.sh`, `chmod +x`. For other stacks, follow the same `[-q] [test_name]` interface.
 - `scripts/render_notes.py` — render `notes.md` with status-conditional body sections. Use this in Phase 4 instead of hand-writing the file.
 - `scripts/update_index.py` — update `.unvibe/INDEX.md` in place from a `notes.md` frontmatter. Use this after every `notes.md` write (including re-drills).
-- `scripts/quick_validate.sh` — self-check that a generated exercise dir is well-formed (dir name, README difficulty tag, executable run.sh, test + stub files). Run at the end of Phase 2.
+- `scripts/quick_validate.sh` — self-check that a generated exercise dir is well-formed (dir name, README difficulty tag, executable run.sh, test + stub files). Auto-detects the sliced layout (`stepN_*/` subdirs) and validates each step as a leaf. Run at the end of Phase 2.
 
 ## Workflow
 
@@ -51,7 +51,7 @@ Present them as a numbered shortlist with a short "why this matters" note, then 
 
 *Phase 1: Explain* — ask one focused question about intent, not line-by-line. Evaluate solid → Phase 2, partial → one follow-up → Phase 2, fuzzy → you explain (3–4 sentences) → they repeat back → Phase 2. See `references/reference.md` → "Phase 1: Evaluation rubric".
 
-*Phase 2: Reimplement (LeetCode-style)* — if the user approves file writes, create `.unvibe/exercises/<YYYY-MM-DD_HH-MM-SS>_<slug>/` containing:
+*Phase 2: Reimplement (LeetCode-style)* — **right-size first.** A piece with more than one responsibility, or one the user was low-confidence on in Phase 1, gets *sliced* into a short progression of small step-subdirs (pure helpers first, composition last) instead of one oversized stub; a single cohesive idea stays one exercise. See `references/reference.md` → "Phase 2: Right-sizing — slice large pieces into a progression" for the trigger, the `stepN_<slug>/` layout, ordering, and the give-earlier-solutions-forward rule. If the user approves file writes, create the container `.unvibe/exercises/<YYYY-MM-DD_HH-MM-SS>_<slug>/`. For a **single** exercise it holds these four files directly; for a **sliced** one it holds a progression-map `README.md` and each `stepN_<slug>/` leaf holds these four:
 
 1. `README.md` — Read `assets/templates/readme.md`, fill the `<TOKENS>` (`<DIFFICULTY>` per the rubric, `<PIECE_NAME>`, `<SOURCE_PATH>`, `<PROBLEM_DESCRIPTION>`, `<EXAMPLES_BLOCK>` *happy-path only*, `<CONSTRAINTS_LIST>`, `<LANG>`, `<SIGNATURE_BLOCK>`), `Write` to the exercise dir. **Ground external-surface facts before asserting them**: any claim about a platform / stdlib / framework / language-spec / third-party API you did not author must be verified with `WebSearch`/`WebFetch` and stated as an absolute only if verified; otherwise hedge it. Keep the *links* out of the README — they belong in the Phase 4 trail. See `references/reference.md` → "Reference grounding (external-surface facts)". Never write a citation URL you did not actually fetch.
 2. `exercise.<ext>` — write the public signature plus a stub that fails clearly (e.g. `raise NotImplementedError`, `panic("not implemented")`, `throw new Error("not implemented")`). No hints.
