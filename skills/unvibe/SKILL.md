@@ -62,12 +62,12 @@ After all four files exist, run `bash scripts/quick_validate.sh <exercise-dir>` 
 
 *Phase 3: Verify* — run the exercise's `run.sh`. If tests fail, give one conceptual nudge and let the user revise. If the agent cannot run tests, ask the user to paste the output before moving on.
 
-*Phase 4: Capture* — draft per-piece notes that reflect what actually happened, regardless of outcome:
+*Phase 4: Capture* — write per-piece notes that reflect what actually happened, regardless of outcome. **Save directly; do not gate on user approval.** The notes are a record, not a deliverable — if the user wants something changed they can mention `notes.md` and you edit it in place. Don't draft-then-confirm.
 
 1. Compose a config dict (date, first_drilled, piece, source, confidence_before/after, status one of `owned` / `partial` / `explained-only` / `abandoned`, time_minutes, difficulty, tags, re_drills, and the body `sections`). Save to a temp JSON file. If you grounded any external-surface facts this session, add a `Further reading` entry to `sections` holding the vetted trail (one verified link + a one-line anchor each; format in `references/reference.md` → "Reference grounding"). Omit it when nothing was grounded — the renderer drops the empty section. Never include a link you did not actually fetch.
-2. Render: `python scripts/render_notes.py --config <tmp.json> > <exercise-dir>/notes.md`. The script handles status-conditional body layout.
-3. Show the rendered draft to the user. Accept their edits (overwrite the file if they request changes). Never persist notes without approval.
-4. After the file is written, update the workspace index: `python scripts/update_index.py --notes <exercise-dir>/notes.md`.
+2. Render straight to the file: `python scripts/render_notes.py --config <tmp.json> > <exercise-dir>/notes.md`. The script handles status-conditional body layout.
+3. Update the workspace index: `python scripts/update_index.py --notes <exercise-dir>/notes.md`.
+4. Tell the user the notes were saved in one line, **with the path**, so they know where to refine them — but do not ask for confirmation.
 5. On re-drill of the same piece: append a new dated section to the existing `notes.md` (do not overwrite earlier sections), bump `re_drills`, then re-run `update_index.py`. See `references/reference.md` → "Phase 4: Re-drill append pattern".
 
 **Step 3 — Session summary**
@@ -81,4 +81,4 @@ Briefly highlight what changed this session — pieces now owned, still partial,
 - Never reveal hidden edge/failure cases in the README — they surface only when a test goes red.
 - Hints during Phase 2: one conceptual nudge only, never code.
 - Keep generated tests behavioral. Do not assert private implementation details.
-- `notes.md` is collaborative: agent drafts after each piece, user approves or edits, then it's written. Never save notes without showing the user the draft.
+- `notes.md` is saved automatically after each piece — no approval gate, no draft-then-confirm. State the saved path so the user can refine it; if they ask for changes, edit the file in place.
