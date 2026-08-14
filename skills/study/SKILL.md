@@ -3,8 +3,9 @@ name: study
 description: >
   Interactive active-recall learning and note distillation session. The agent explains complex
   technical concepts with official documentation/RFC references and optional CLI experiments,
-  drills the user with 5 active-recall questions, rewords the user's responses into structured
-  Markdown cheat sheets, and commits them to ~/Documents/notes/<category>/.
+  drills the user with adaptive active-recall questions (scaled to topic complexity, max 5),
+  rewords the user's responses into structured Markdown cheat sheets, and commits them to
+  ~/Documents/notes/<category>/.
 ---
 
 # Study
@@ -55,9 +56,9 @@ Active-recall learning session that turns technical concepts, codebase patterns,
 
 ---
 
-### Step 2 — Active Recall Question Drill (5 Questions)
+### Step 2 — Active Recall Question Drill (Adaptive, Max 5 Questions)
 
-1. Generate **5 focused active-recall questions** covering the core principles, syntax, security implications, edge cases, and practical code implementations.
+1. Generate **focused active-recall questions** (jumlah adaptif disesuaikan dengan kompleksitas topik: mulai dari 2–3 soal untuk konsep spesifik/sederhana, hingga maksimal 5 soal untuk topik luas/arsitektur) covering the core principles, syntax, security implications, edge cases, and practical code implementations. Jangan memaksakan 5 soal jika topik sudah tuntas dalam 2-3 soal.
 2. Allow the user to answer in their own words (either all at once or one by one).
 3. **Deep-Dive Pause:** If the user asks a clarification question or struggles with a concept during the drill, pause the Q&A, explain the missing concept clearly (or offer a mini-experiment), and resume when ready.
 
