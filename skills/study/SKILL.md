@@ -19,14 +19,24 @@ Active-recall learning session that turns technical concepts, codebase patterns,
 /study <file_path>             # Study logic/patterns from a specific codebase file
 ```
 
-## Setup & Prerequisites
+## Setup & Prerequisites (Dynamic & Configurable)
 
-1. Target Knowledge Base Directory: `~/Documents/notes/`
-2. Automatically categorize notes into appropriate subdirectories:
-   - `networking/` — CIDR, Subnetting, IP Addressing, CGNAT, RFCs, Protocols.
-   - `docker/` — Docker Socket, Image References, Tags, Digests, Containers, Volumes.
-   - `linux/` — Unix Domain Sockets, OS Kernel, Systemd, Process Management, Bash.
-   - `<category>/` — Create new category directories as needed for other topics.
+1. **Detect / Ask Notes Target Directory:**
+   - Do not hardcode a single path. Check for common notes locations:
+     - `~/Documents/notes`
+     - `./docs/` or `./notes/` within the current workspace
+   - If ambiguous or on first run without an obvious notes folder, ask the user:
+     > *"Where would you like to save your study notes? (e.g. `~/Documents/notes`, `./docs/notes`, or custom path)"*
+   - Remember the selected path for the remainder of the session.
+
+2. **Category Routing:**
+   - Organize notes into logical subdirectories under the target notes path (e.g., `<target_notes_dir>/<category>/<NN-slug>.md`).
+   - Automatically create missing category directories as needed.
+
+3. **Safe Git Persistence (Conditional):**
+   - Check if the chosen notes directory is inside a Git repository (`git rev-parse --is-inside-work-tree`).
+   - **If Git is initialized:** Automatically stage and commit the note (`git add` + `git commit`).
+   - **If Git is not initialized:** Save the Markdown note file safely without attempting Git commands.
 
 ---
 
@@ -71,20 +81,21 @@ Active-recall learning session that turns technical concepts, codebase patterns,
 
 ### Step 4 — File Writing & Git Auto-Commit
 
-1. Determine the sequential prefix number based on existing files in `~/Documents/notes/<category>/` (e.g., `01-`, `02-`, `03-`, `04-`).
-2. Save the note to `~/Documents/notes/<category>/<NN-slug>.md`.
-3. Execute Git commands in `~/Documents/notes`:
+1. Determine the sequential prefix number based on existing files in `<target_notes_dir>/<category>/` (e.g., `01-`, `02-`, `03-`, `04-`).
+2. Save the note to `<target_notes_dir>/<category>/<NN-slug>.md`.
+3. If `<target_notes_dir>` is a Git repository, execute Git commands:
    ```bash
    git add <category>/<NN-slug>.md
    git commit -m "docs: add <NN-slug>.md note"
    ```
-4. Present a summary of the created note and git commit hash to the user.
+4. Present a summary of the created note path and git status to the user.
 
 ---
 
 ## Rules
 
 - **User Answers Required:** Never write a final note without running the active recall question drill first.
+- **Configurable Destination:** Always check or ask for the user's preferred notes directory (`<target_notes_dir>`). Do not force a single hardcoded path.
 - **Reference Grounding:** Always verify external facts (RFC numbers, CLI syntax, standard library behaviors) before asserting them.
-- **No Silo Notes:** Always include a `Referensi Terkait` section with relative Markdown links to related notes in `~/Documents/notes/`.
-- **Automatic Persistence:** Always commit newly created notes to the Git repository in `~/Documents/notes`.
+- **No Silo Notes:** Always include a `Referensi Terkait` section with relative Markdown links to related notes in `<target_notes_dir>`.
+- **Safe Persistence:** Stage and commit notes only if the target notes folder is a Git repository; otherwise, save the file cleanly.
