@@ -56,17 +56,28 @@ Active-recall learning session that turns technical concepts, codebase patterns,
 
 ---
 
-### Step 2 — Active Recall Question Drill (Adaptive, Max 5 Questions)
+### Step 2 — Active Recall Question Drill & Interactive Evaluation
 
-1. Generate **focused active-recall questions** (jumlah adaptif disesuaikan dengan kompleksitas topik: mulai dari 2–3 soal untuk konsep spesifik/sederhana, hingga maksimal 5 soal untuk topik luas/arsitektur) covering the core principles, syntax, security implications, edge cases, and practical code implementations. Jangan memaksakan 5 soal jika topik sudah tuntas dalam 2-3 soal.
-2. Allow the user to answer in their own words (either all at once or one by one).
-3. **Deep-Dive Pause:** If the user asks a clarification question or struggles with a concept during the drill, pause the Q&A, explain the missing concept clearly (or offer a mini-experiment), and resume when ready.
+1. **Adaptive Question Generation:**
+   - Generate focused active-recall questions (jumlah adaptif disesuaikan dengan kompleksitas topik: 2–3 soal untuk konsep spesifik/sederhana, hingga maksimal 5 soal untuk topik luas/arsitektur) covering core principles, syntax, security implications, edge cases, and practical code implementations.
+   - Jangan memaksakan 5 soal jika topik sudah tuntas dalam 2–3 soal.
+
+2. **Evaluate & Give Precise Feedback on Each Answer:**
+   - **Jika Benar:** Konfirmasi dan beri penguatan singkat atas poin-poin kuncinya.
+   - **Jika Setengah Benar / Kurang Lengkap:** Tunjukkan dengan jelas bagian mana yang sudah tepat, lalu beri klarifikasi/elaborasi pada bagian yang masih rancu agar pemahaman user utuh.
+   - **Jika Salah / Terjadi Miskonsepsi:**
+     - **JANGAN langsung membuat notes!**
+     - Berikan penjelasan yang membimbing (*guided explanation*) dan arahkan ke pemahaman yang benar.
+     - **Wajib minta user untuk menjawab ulang (*re-attempt*)** pertanyaan yang salah tersebut sebelum melangkah ke proses pembuatan catatan.
+
+3. **Deep-Dive Pause:**
+   - Jika user bertanya atau kesulitan di tengah drill, jeda sesi tanya jawab, jelaskan konsepnya (atau berikan eksperimen mini), lalu lanjutkan saat user siap.
 
 ---
 
 ### Step 3 — Note Distillation & Structuring
 
-1. Take the user's answers and reword them into a professional, highly structured Markdown cheat sheet.
+1. Take the user's validated answers and reword them into a professional, highly structured Markdown cheat sheet.
 2. Include the following sections in the note:
    - `# Cheat Sheet: <Topic Title>`
    - `## 1. <Core Definition & Background>`
@@ -95,7 +106,9 @@ Active-recall learning session that turns technical concepts, codebase patterns,
 
 ## Rules
 
-- **User Answers Required:** Never write a final note without running the active recall question drill first.
+- **Strict Drill Completion & No Premature Notes:** Jangan pernah menulis note sebelum seluruh pertanyaan drill dijawab dengan benar oleh user. Jika ada jawaban salah, berikan arahan dan minta user menjawab kembali.
+- **Explicit Feedback on Partial Answers:** Berikan klarifikasi eksplisit pada jawaban yang setengah benar agar user mengetahui dengan jelas letak benar/salahnya.
+- **Adaptive Questions (Max 5):** Sesuaikan jumlah pertanyaan dengan kompleksitas materi (2–3 untuk konsep terfokus, maksimal 5 untuk topik luas).
 - **Configurable Destination:** Always check or ask for the user's preferred notes directory (`<target_notes_dir>`). Do not force a single hardcoded path.
 - **Reference Grounding:** Always verify external facts (RFC numbers, CLI syntax, standard library behaviors) before asserting them.
 - **No Silo Notes:** Always include a `Referensi Terkait` section with relative Markdown links to related notes in `<target_notes_dir>`.
