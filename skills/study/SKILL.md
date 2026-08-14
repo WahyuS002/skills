@@ -4,8 +4,8 @@ description: >
   Interactive active-recall learning and note distillation session. The agent explains complex
   technical concepts with official documentation/RFC references and optional CLI experiments,
   drills the user with adaptive active-recall questions (scaled to topic complexity, max 5),
-  rewords the user's responses into structured Markdown cheat sheets, and commits them to
-  ~/Documents/notes/<category>/.
+  rigorously validates answers (prompting re-attempts on mistakes), rewords validated responses
+  into structured Markdown cheat sheets, and commits them to ~/Documents/notes/<category>/.
 ---
 
 # Study
@@ -16,7 +16,7 @@ Active-recall learning session that turns technical concepts, codebase patterns,
 
 ```text
 /study                         # Ask what concept or file to study
-/study <topic>                 # Study a specific concept (e.g. /study cgnat, /study docker-socket)
+/study <topic>                 # Study a specific concept (e.g. /study cgnat, /study select-case)
 /study <file_path>             # Study logic/patterns from a specific codebase file
 ```
 
@@ -25,7 +25,7 @@ Active-recall learning session that turns technical concepts, codebase patterns,
 1. **Detect / Ask Notes Target Directory:**
    - Do not hardcode a single path. Check for common notes locations:
      - `~/Documents/notes`
-     - `./docs/` or `./notes/` within the current workspace
+     - `./docs/notes` or `./notes/` within the current workspace
    - If ambiguous or on first run without an obvious notes folder, ask the user:
      > *"Where would you like to save your study notes? (e.g. `~/Documents/notes`, `./docs/notes`, or custom path)"*
    - Remember the selected path for the remainder of the session.
@@ -59,19 +59,19 @@ Active-recall learning session that turns technical concepts, codebase patterns,
 ### Step 2 — Active Recall Question Drill & Interactive Evaluation
 
 1. **Adaptive Question Generation:**
-   - Generate focused active-recall questions (jumlah adaptif disesuaikan dengan kompleksitas topik: 2–3 soal untuk konsep spesifik/sederhana, hingga maksimal 5 soal untuk topik luas/arsitektur) covering core principles, syntax, security implications, edge cases, and practical code implementations.
-   - Jangan memaksakan 5 soal jika topik sudah tuntas dalam 2–3 soal.
+   - Generate focused active-recall questions scaled to topic complexity (2–3 questions for simple or narrow concepts, up to a maximum of 5 for broad architectural or system topics) covering core principles, syntax, security implications, edge cases, and practical code implementations.
+   - Do not force 5 questions if the concept is thoroughly covered in 2–3.
 
 2. **Evaluate & Give Precise Feedback on Each Answer:**
-   - **Jika Benar:** Konfirmasi dan beri penguatan singkat atas poin-poin kuncinya.
-   - **Jika Setengah Benar / Kurang Lengkap:** Tunjukkan dengan jelas bagian mana yang sudah tepat, lalu beri klarifikasi/elaborasi pada bagian yang masih rancu agar pemahaman user utuh.
-   - **Jika Salah / Terjadi Miskonsepsi:**
-     - **JANGAN langsung membuat notes!**
-     - Berikan penjelasan yang membimbing (*guided explanation*) dan arahkan ke pemahaman yang benar.
-     - **Wajib minta user untuk menjawab ulang (*re-attempt*)** pertanyaan yang salah tersebut sebelum melangkah ke proses pembuatan catatan.
+   - **If Correct:** Confirm and briefly reinforce key takeaways.
+   - **If Partially Correct / Incomplete:** Explicitly clarify what parts are accurate and explain the missing or ambiguous aspects so the user gains a complete understanding.
+   - **If Incorrect / Misconception:**
+     - **DO NOT create notes prematurely!**
+     - Provide a guided explanation and point the user in the right conceptual direction.
+     - **Require the user to re-attempt answering** the missed question before advancing to note creation.
 
 3. **Deep-Dive Pause:**
-   - Jika user bertanya atau kesulitan di tengah drill, jeda sesi tanya jawab, jelaskan konsepnya (atau berikan eksperimen mini), lalu lanjutkan saat user siap.
+   - If the user asks a clarification question or struggles with a concept during the drill, pause the Q&A, explain the missing concept clearly (or offer a mini-experiment), and resume when ready.
 
 ---
 
@@ -84,10 +84,11 @@ Active-recall learning session that turns technical concepts, codebase patterns,
    - `## 2. <Architecture / Syntax / Comparison Table>`
    - `## 3. <Practical Code / Command Usage>`
    - `## 4. <Security & Edge Cases>`
-   - `## Referensi Terkait` (Verified links + relative links to existing notes).
+   - `## 5. <Codebase References>` (if codebase files were studied)
+   - `## Related References` (Verified external links + relative links to existing notes).
 3. **Formatting Quality Rule:**
    - Keep lines clean and readable.
-   - Use standard code blocks (`text`, `go`, `bash`) for math or code equations instead of nested math markers inside bold text.
+   - Use standard code blocks (`text`, `go`, `bash`) for code/equations instead of nested math markers inside bold text.
 
 ---
 
@@ -106,10 +107,10 @@ Active-recall learning session that turns technical concepts, codebase patterns,
 
 ## Rules
 
-- **Strict Drill Completion & No Premature Notes:** Jangan pernah menulis note sebelum seluruh pertanyaan drill dijawab dengan benar oleh user. Jika ada jawaban salah, berikan arahan dan minta user menjawab kembali.
-- **Explicit Feedback on Partial Answers:** Berikan klarifikasi eksplisit pada jawaban yang setengah benar agar user mengetahui dengan jelas letak benar/salahnya.
-- **Adaptive Questions (Max 5):** Sesuaikan jumlah pertanyaan dengan kompleksitas materi (2–3 untuk konsep terfokus, maksimal 5 untuk topik luas).
+- **Strict Drill Completion & No Premature Notes:** Never write a final note without running the active recall drill and validating that every question is answered correctly. If any answer is incorrect, provide guidance and prompt a re-attempt first.
+- **Explicit Feedback on Partial Answers:** Provide clear, explicit feedback distinguishing correct parts from misconceptions so the user knows exactly where they stand.
+- **Adaptive Questions (Max 5):** Scale question count to topic complexity (2–3 for focused topics, max 5 for broad topics).
 - **Configurable Destination:** Always check or ask for the user's preferred notes directory (`<target_notes_dir>`). Do not force a single hardcoded path.
 - **Reference Grounding:** Always verify external facts (RFC numbers, CLI syntax, standard library behaviors) before asserting them.
-- **No Silo Notes:** Always include a `Referensi Terkait` section with relative Markdown links to related notes in `<target_notes_dir>`.
+- **No Silo Notes:** Always include a `Related References` section with relative Markdown links to related notes in `<target_notes_dir>`.
 - **Safe Persistence:** Stage and commit notes only if the target notes folder is a Git repository; otherwise, save the file cleanly.
