@@ -10,6 +10,7 @@ Public [Claude Code](https://claude.ai/code) skills.
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | [`/unvibe`](./skills/unvibe/SKILL.md) | Turn AI-written code into code you actually own. Explain it, reimplement it from scratch, pass the tests. |
 | [`/study`](./skills/study/SKILL.md)  | Interactive active-recall learning & note distillation into your personal knowledge base.|
+| [`/tldr`](./skills/tldr/SKILL.md)    | Direct, high-signal, zero-fluff technical explanations using BLUF and structured bullet points.           |
 
 ## Install
 
@@ -24,6 +25,7 @@ Then run:
 ```text
 /unvibe
 /study <topic>
+/tldr <file/function/concept>
 ```
 
 ### Manual fallback
